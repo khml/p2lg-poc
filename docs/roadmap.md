@@ -67,22 +67,11 @@
 
 ### フェーズ2: 基盤実装
 
-- [ ] `monitoring-handson/` ディレクトリ・ファイル構成の構築
-  - `app/main.py` — Flask サンプルアプリ（メトリクス・ログ出力）
-  - `app/requirements.txt` — Python依存パッケージ
-  - `app/Dockerfile` — アプリコンテナ定義
-  - `prometheus/prometheus.yml` — スクレイプ設定
-  - `loki/loki-config.yml` — Loki 設定
-  - `promtail/promtail-config.yml` — ログ収集設定
-  - `grafana/datasources.yml` — データソース自動登録
-  - `docker-compose.yml` — 全サービス定義
+- [ ] チケット #0002: 基盤実装 — monitoring-handson ディレクトリ構成の構築（全設定ファイル・Docker Compose）
 
 ### フェーズ3: 動作確認・学習
 
-- [ ] Docker Compose で全サービス起動確認
-- [ ] Prometheus でのメトリクス確認（PromQL クエリ）
-- [ ] Loki でのログ確認（LogQL クエリ）
-- [ ] Grafana ダッシュボード作成
+- [ ] チケット #0003: 動作確認 — Prometheus・Loki・Grafana の学習クエリ実施
 
 ### フェーズ4: 拡張（任意）
 
@@ -97,3 +86,5 @@
 | チケット番号 | チケット名 | ステータス |
 |---|---|---|
 | #0001 | 要件定義作成 | 完了 |
+| #0002 | 基盤実装 | 未着手 |
+| #0003 | 動作確認 | 未着手 |

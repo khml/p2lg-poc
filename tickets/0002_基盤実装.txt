@@ -1,0 +1,60 @@
+## チケット番号
+0002
+
+## チケット名
+基盤実装：monitoring-handson ディレクトリ構成の構築
+
+## チケットステータス
+未着手
+
+## 概要
+Prometheus + Loki + Promtail + Grafana ハンズオン環境を構成するための全ファイルを実装する。
+チケット #0001（要件定義）で定義されたコード・設定ファイルをすべて実装し、Docker Compose で起動できる状態にする。
+
+## 背景・目的
+プロジェクトの学習目標を達成するために、実際に動作する監視環境を構築する必要がある。
+要件定義チケット（#0001）で全ての実装コードが定義済みのため、それを実際のファイルとして配置する。
+
+## 受け入れ条件
+
+- [ ] `monitoring-handson/` ディレクトリ構成が作成されている
+- [ ] `app/main.py` — Flask サンプルアプリ（メトリクス・ログ出力機能付き）が実装されている
+- [ ] `app/requirements.txt` — Python依存パッケージが定義されている
+- [ ] `app/Dockerfile` — アプリのコンテナ定義が実装されている
+- [ ] `prometheus/prometheus.yml` — スクレイプ設定が実装されている
+- [ ] `loki/loki-config.yml` — Loki設定が実装されている
+- [ ] `promtail/promtail-config.yml` — ログ収集設定が実装されている
+- [ ] `grafana/datasources.yml` — データソース自動登録設定が実装されている
+- [ ] `docker-compose.yml` — 全サービスが定義されている
+- [ ] `docker compose up -d --build` で全サービスが正常に起動する
+- [ ] http://localhost:5000 でサンプルアプリにアクセスできる
+- [ ] http://localhost:9090 で Prometheus にアクセスできる
+- [ ] http://localhost:3000 で Grafana にアクセスできる（admin/admin）
+
+## 実装内容
+
+以下のファイルを `tickets/0001_要件定義作成.txt` の実装コードに基づいて作成する:
+
+### app/
+- `main.py` — Flask アプリ本体（`/`, `/error`, `/metrics` エンドポイント）
+- `requirements.txt` — `flask==3.1.0`, `prometheus-client==0.21.1`
+- `Dockerfile` — python:3.12-slim ベース
+
+### prometheus/
+- `prometheus.yml` — scrape_interval: 5s、demo-app と prometheus 自身を対象
+
+### loki/
+- `loki-config.yml` — auth_enabled: false、inmemory kvstore、tsdb schema v13
+
+### promtail/
+- `promtail-config.yml` — Docker ソケット経由でコンテナログ収集、Loki へ push
+
+### grafana/
+- `datasources.yml` — Prometheus と Loki をデータソースとして自動登録
+
+### ルートレベル
+- `docker-compose.yml` — app, prometheus, loki, promtail, grafana の全サービス定義
+
+## 参考
+- `tickets/0001_要件定義作成.txt` に全実装コードが記載されている
+- 各コンポーネントのポート設定: app:5000, prometheus:9090, loki:3100, promtail:9080, grafana:3000

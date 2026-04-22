@@ -1,0 +1,51 @@
+## チケット番号
+0003
+
+## チケット名
+動作確認：Prometheus・Loki・Grafana の学習クエリ実施
+
+## チケットステータス
+未着手
+
+## 概要
+チケット #0002 で構築した環境を使い、Prometheus（PromQL）・Loki（LogQL）・Grafana での一連の学習操作を実施し、正常に動作することを確認する。
+
+## 背景・目的
+ハンズオンプロジェクトの最終目的は、メトリクス・ログの収集から可視化までの全体像を理解すること。
+構築した環境で実際にクエリを実行し、各コンポーネントの動作を確認する。
+
+## 受け入れ条件
+
+### Prometheus
+- [ ] `app_request_total` クエリでリクエスト総数が確認できる
+- [ ] `rate(app_request_total[1m])` でリクエスト率が確認できる
+- [ ] `histogram_quantile(0.95, rate(app_request_latency_seconds_bucket[1m]))` でレイテンシ95パーセンタイルが確認できる
+- [ ] `sum by (status) (rate(app_request_total[1m]))` でステータス別集計ができる
+
+### Loki（Grafana Explore 画面）
+- [ ] `{service="app"}` でアプリのログが確認できる
+- [ ] `{service="app"} |= "ERROR"` でエラーログが絞り込める
+- [ ] `rate({service="app"} |= "ERROR" [1m])` でエラー発生頻度が確認できる
+
+### Grafana ダッシュボード
+- [ ] 新規ダッシュボードに「リクエストレート」パネルを追加できる
+- [ ] 「レイテンシ」パネルを追加できる
+- [ ] 「エラーログ」パネルを追加できる
+
+## 実施手順
+
+1. `docker compose up -d --build` でサービスを起動
+2. テストデータ生成:
+   ```bash
+   for i in $(seq 1 30); do curl -s http://localhost:5000/; done
+   for i in $(seq 1 5); do curl -s http://localhost:5000/error; done
+   ```
+3. Prometheus（http://localhost:9090）で上記クエリを実行
+4. Grafana（http://localhost:3000）の Explore 画面で Loki クエリを実行
+5. Grafana でダッシュボードを作成してパネルを追加
+
+## 依存チケット
+- #0002 基盤実装（先に完了が必要）
+
+## 参考
+- `tickets/0001_要件定義作成.txt` の「触ってみよう（学習ガイド）」セクション
