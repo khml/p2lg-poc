@@ -44,7 +44,9 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
-      GF_AUTH_ANONYMOUS_ENABLED: "true"    # ログインなしでも見られる
+      # 注意: 以下はローカル学習専用の設定です。本番環境では絶対に使用しないでください。
+      # See: README.md の「注意事項」セクション
+      GF_AUTH_ANONYMOUS_ENABLED: "true"    # ログインなしでも見られる（ローカル学習専用）
     volumes:
       - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
       - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml

@@ -37,11 +37,11 @@
 1. `docker compose up -d --build` でサービスを起動
 2. テストデータ生成:
    ```bash
-   for i in $(seq 1 30); do curl -s http://localhost:5000/; done
-   for i in $(seq 1 5); do curl -s http://localhost:5000/error; done
+   for i in $(seq 1 30); do curl -s http://localhost:5001/; done
+   for i in $(seq 1 5); do curl -s http://localhost:5001/error; done
    ```
 3. Prometheus（http://localhost:9090）で上記クエリを実行
-4. Grafana（http://localhost:3000）の Explore 画面で Loki クエリを実行
+4. Grafana（http://localhost:3003）の Explore 画面で Loki クエリを実行
 5. Grafana でダッシュボードを作成してパネルを追加
 
 ## 依存チケット
