@@ -27,9 +27,9 @@ bash scripts/generate_test_data.sh
 
 | サービス | URL |
 |---|---|
-| demo-app | http://localhost:5000 |
+| demo-app | http://localhost:5001 |
 | Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3000（admin/admin） |
+| Grafana | http://localhost:3003（admin/admin） |
 
 ---
 
@@ -85,7 +85,7 @@ sum by (status) (rate(app_request_total[1m]))
 
 ## ステップ2: Grafana でログを見る（Loki）
 
-ブラウザで **http://localhost:3000** を開き、**Explore**（左メニューのコンパスアイコン）に移動してください。  
+ブラウザで **http://localhost:3003** を開き、**Explore**（左メニューのコンパスアイコン）に移動してください。  
 画面上部のデータソース選択から **Loki** を選びます。
 
 ### 基本クエリ（LogQL）
@@ -244,7 +244,7 @@ docker compose logs loki
 ### Prometheus にメトリクスが表示されない
 
 - demo-app が起動しているか確認: `docker compose ps`
-- http://localhost:5000/metrics に直接アクセスしてメトリクスが出力されるか確認
+- http://localhost:5001/metrics に直接アクセスしてメトリクスが出力されるか確認
 
 ### Loki にログが表示されない
 

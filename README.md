@@ -79,10 +79,13 @@ bash scripts/generate_test_data.sh
 
 | サービス | デフォルトURL |
 |---|---|
-| demo-app | http://localhost:5000 |
+| demo-app | http://localhost:5001 |
 | Prometheus | http://localhost:9090 |
 | Loki API | http://localhost:3100 |
-| Grafana | http://localhost:3000（admin/admin） |
+| Grafana | http://localhost:3003（admin/admin） |
+
+> ⚠️ このプロジェクトは**ローカル開発・学習目的専用**です。外部公開環境では使用しないでください。
+> Grafana の匿名アクセスが有効になっており、本番利用には適していません。
 
 ### 停止・クリーンアップ
 

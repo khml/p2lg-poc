@@ -1,7 +1,7 @@
 import logging
 import random
 import time
-from flask import Flask, request
+from flask import Flask
 from prometheus_client import (
     Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 )
