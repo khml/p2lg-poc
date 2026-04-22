@@ -83,6 +83,7 @@
 - [x] docs/architecture.md — アーキテクチャ詳細ドキュメント
 - [x] docs/handson-guide.md — ハンズオン学習ガイド
 - [x] チケット #0004: handson-guide.md の実装との不一致修正 — ディレクトリ構成セクション追加
+- [x] チケット #0005: 初心者向けソフトウェア解説ドキュメント作成 — docs/software-guide.md 新規作成
 
 ### フェーズ5: 拡張（任意）
 
@@ -100,3 +101,4 @@
 | #0002 | 基盤実装 | 完了（tickets/done/） |
 | #0003 | 動作確認 | 完了（tickets/done/） |
 | #0004 | handson-guide.md の実装との不一致修正 | 完了（tickets/done/） |
+| #0005 | 初心者向けソフトウェア解説ドキュメント作成 | 完了（tickets/done/） |
