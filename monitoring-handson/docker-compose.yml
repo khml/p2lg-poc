@@ -1,0 +1,54 @@
+services:
+
+  # ===== サンプルアプリ =====
+  app:
+    build: ./app
+    container_name: demo-app
+    ports:
+      - "5001:5000"
+    labels:
+      logging: "promtail"
+
+  # ===== Prometheus（メトリクス収集） =====
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  # ===== Loki（ログ収集バックエンド） =====
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml
+    command: -config.file=/etc/loki/loki-config.yml
+    ports:
+      - "3100:3100"
+
+  # ===== Promtail（ログ転送エージェント） =====
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml
+      - /var/run/docker.sock:/var/run/docker.sock   # Docker のログを読む
+    command: -config.file=/etc/promtail/promtail-config.yml
+
+  # ===== Grafana（可視化） =====
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"    # ログインなしでも見られる
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    ports:
+      - "3003:3000"
+    depends_on:
+      - prometheus
+      - loki

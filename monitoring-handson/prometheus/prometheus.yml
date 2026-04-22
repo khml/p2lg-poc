@@ -1,0 +1,13 @@
+global:
+  scrape_interval: 5s          # 5秒ごとにメトリクス取得
+
+scrape_configs:
+  # Prometheus 自身のメトリクス
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # サンプルアプリのメトリクス
+  - job_name: "demo-app"
+    static_configs:
+      - targets: ["app:5000"]
