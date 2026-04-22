@@ -47,6 +47,8 @@ services:
       GF_AUTH_ANONYMOUS_ENABLED: "true"    # ログインなしでも見られる
     volumes:
       - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      - ./grafana/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      - ./grafana/demo-dashboard.json:/etc/grafana/provisioning/dashboards/demo-dashboard.json
     ports:
       - "3003:3000"
     depends_on:
