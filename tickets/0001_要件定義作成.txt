@@ -1,0 +1,386 @@
+
+
+# Prometheus + Loki + Promtail + Grafana ハンズオンプロジェクト
+
+全体像を理解するためのミニマルな構成を作ります。**サンプルWebアプリ（Python）がメトリクスとログを出し、それぞれ Prometheus / Loki が収集し、Grafana で可視化する**という流れです。
+
+---
+
+## プロジェクト構成
+
+```
+monitoring-handson/
+├── docker-compose.yml
+├── app/
+│   ├── main.py
+│   └── requirements.txt
+├── prometheus/
+│   └── prometheus.yml
+├── loki/
+│   └── loki-config.yml
+├── promtail/
+│   └── promtail-config.yml
+└── grafana/
+    └── datasources.yml
+```
+
+---
+
+## 1. サンプル Web アプリ（メトリクス＋ログを出す役）
+
+### `app/requirements.txt`
+
+```txt
+flask==3.1.0
+prometheus-client==0.21.1
+```
+
+### `app/main.py`
+
+```python
+import logging
+import random
+import time
+from flask import Flask, request
+from prometheus_client import (
+    Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
+)
+
+# ──────────────────────────────────
+# ログ設定（Promtail が拾う）
+# ──────────────────────────────────
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
+logger = logging.getLogger("demo-app")
+
+# ──────────────────────────────────
+# Prometheus メトリクス定義
+# ──────────────────────────────────
+REQUEST_COUNT = Counter(
+    "app_request_total",
+    "Total HTTP requests",
+    ["method", "endpoint", "status"],
+)
+REQUEST_LATENCY = Histogram(
+    "app_request_latency_seconds",
+    "Request latency in seconds",
+    ["endpoint"],
+)
+
+app = Flask(__name__)
+
+
+# ──────────────────────────────────
+# エンドポイント
+# ──────────────────────────────────
+@app.route("/")
+def index():
+    start = time.time()
+    # ランダムに遅延を入れて「重いリクエスト」を再現
+    delay = random.uniform(0.01, 0.5)
+    time.sleep(delay)
+
+    logger.info("Handled / — latency=%.3fs", delay)
+    REQUEST_COUNT.labels("GET", "/", 200).inc()
+    REQUEST_LATENCY.labels("/").observe(time.time() - start)
+    return "Hello from demo app!\n"
+
+
+@app.route("/error")
+def error():
+    logger.error("Intentional error triggered on /error")
+    REQUEST_COUNT.labels("GET", "/error", 500).inc()
+    return "Something went wrong!\n", 500
+
+
+@app.route("/metrics")
+def metrics():
+    """Prometheus が scrape するエンドポイント"""
+    return generate_latest(), 200, {"Content-Type": CONTENT_TYPE_LATEST}
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
+```
+
+---
+
+## 2. Prometheus 設定
+
+### `prometheus/prometheus.yml`
+
+```yaml
+global:
+  scrape_interval: 5s          # 5秒ごとにメトリクス取得
+
+scrape_configs:
+  # Prometheus 自身のメトリクス
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # サンプルアプリのメトリクス
+  - job_name: "demo-app"
+    static_configs:
+      - targets: ["app:5000"]
+```
+
+---
+
+## 3. Loki 設定
+
+### `loki/loki-config.yml`
+
+```yaml
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+common:
+  ring:
+    instance_addr: 0.0.0.0
+    kvstore:
+      store: inmemory
+  replication_factor: 1
+  path_prefix: /loki
+
+schema_config:
+  configs:
+    - from: "2020-01-01"
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+storage_config:
+  filesystem:
+    directory: /loki/chunks
+```
+
+---
+
+## 4. Promtail 設定
+
+### `promtail/promtail-config.yml`
+
+```yaml
+server:
+  http_listen_port: 9080
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push   # Loki へ送る
+
+scrape_configs:
+  - job_name: docker
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: docker
+          __path__: /var/log/docker/*.log      # Docker のコンテナログを読む
+
+  # Docker サービスのログを直接拾う（docker ログドライバ経由）
+  - job_name: containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      # コンテナ名をラベルにする
+      - source_labels: ["__meta_docker_container_name"]
+        target_label: "container"
+        regex: "/(.*)"
+      # compose サービス名をラベルにする
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "service"
+```
+
+---
+
+## 5. Grafana データソース自動登録
+
+### `grafana/datasources.yml`
+
+```yaml
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+```
+
+---
+
+## 6. Docker Compose（すべてをつなげる）
+
+### `docker-compose.yml`
+
+```yaml
+services:
+
+  # ===== サンプルアプリ =====
+  app:
+    build: ./app
+    container_name: demo-app
+    ports:
+      - "5000:5000"
+    labels:
+      logging: "promtail"
+
+  # ===== Prometheus（メトリクス収集） =====
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  # ===== Loki（ログ収集バックエンド） =====
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/loki-config.yml
+    command: -config.file=/etc/loki/loki-config.yml
+    ports:
+      - "3100:3100"
+
+  # ===== Promtail（ログ転送エージェント） =====
+  promtail:
+    image: grafana/promtail:latest
+    container_name: promtail
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/promtail-config.yml
+      - /var/run/docker.sock:/var/run/docker.sock   # Docker のログを読む
+    command: -config.file=/etc/promtail/promtail-config.yml
+
+  # ===== Grafana（可視化） =====
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"    # ログインなしでも見られる
+    volumes:
+      - ./grafana/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+```
+
+### `app/Dockerfile`（app ディレクトリに追加）
+
+```dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY main.py .
+CMD ["python", "main.py"]
+```
+
+---
+
+## 起動手順
+
+```bash
+# 1. 起動
+cd monitoring-handson
+docker compose up -d --build
+
+# 2. アプリにリクエストを送ってデータを作る
+#    正常リクエスト
+for i in $(seq 1 30); do curl -s http://localhost:5000/; done
+
+#    エラーリクエスト
+for i in $(seq 1 5); do curl -s http://localhost:5000/error; done
+```
+
+---
+
+## 触ってみよう（学習ガイド）
+
+### Prometheus（メトリクス = 数値の時系列データ）
+
+ブラウザで **http://localhost:9090** を開く。
+
+| やること | クエリ（PromQL） | 学べること |
+|---|---|---|
+| リクエスト総数を見る | `app_request_total` | Counter 型メトリクスの基本 |
+| 1分あたりのリクエスト率 | `rate(app_request_total[1m])` | `rate()` 関数の使い方 |
+| レイテンシの95パーセンタイル | `histogram_quantile(0.95, rate(app_request_latency_seconds_bucket[1m]))` | Histogram 型の分析 |
+| ステータス別に集計 | `sum by (status) (rate(app_request_total[1m]))` | ラベルでのグルーピング |
+
+### Loki + Promtail（ログ = テキストの時系列データ）
+
+ブラウザで **http://localhost:3000** → 左メニュー **Explore** → データソースを **Loki** に切り替え。
+
+| やること | クエリ（LogQL） | 学べること |
+|---|---|---|
+| アプリのログ全件 | `{service="app"}` | ラベルセレクタの基本 |
+| エラーログだけ抽出 | `{service="app"} \|= "ERROR"` | フィルタ式 |
+| エラー発生頻度 | `rate({service="app"} \|= "ERROR" [1m])` | ログからメトリクスを作る |
+| 全コンテナのログ | `{job="containers"}` | 複数ソースの横断検索 |
+
+### Grafana（ダッシュボード可視化）
+
+**http://localhost:3000**（admin / admin）
+
+1. **Explore** 画面で上記クエリを試す
+2. **Dashboards → New Dashboard** でパネルを追加し、PromQL / LogQL を貼る
+3. 「リクエストレート」「レイテンシ」「エラーログ」を並べたダッシュボードを作る
+
+---
+
+## 全体の流れ（図解）
+
+```
+┌──────────┐        scrape /metrics         ┌─────────────┐
+│ demo-app │  ◄──────────────────────────── │  Prometheus  │──┐
+│ (Flask)  │   メトリクス (数値)             │  :9090       │  │
+│  :5000   │                                └─────────────┘  │
+│          │                                                  │  ┌──────────┐
+│  stdout  │──┐                                               ├─►│ Grafana  │
+│  (ログ)  │  │  Promtail が読み取り         ┌─────────────┐  │  │  :3000   │
+└──────────┘  │                             │    Loki      │──┘  └──────────┘
+              └──► Promtail ───push───────► │  :3100       │
+                   :9080                    └─────────────┘
+                   ログ (テキスト)
+```
+
+**それぞれの役割をまとめると：**
+
+| コンポーネント | 何をするか | 例えるなら |
+|---|---|---|
+| **Prometheus** | 数値メトリクスを定期的に取りに行く（pull型） | 体温計で定期的に計測 |
+| **Loki** | ログを受け取って保存・検索可能にする | 日記帳 |
+| **Promtail** | コンテナのログを読んで Loki に転送するエージェント | 日記を書き写す秘書 |
+| **Grafana** | Prometheus と Loki のデータをグラフ・ダッシュボードで表示 | 見やすいレポートを作る人 |
+
+---
+
+## クリーンアップ
+
+```bash
+docker compose down -v
+```
+
+まずはそのまま動かして、Explore 画面でクエリを色々変えてみるのが理解への近道です。慣れてきたら、アプリにエンドポイントを追加したり、アラートルールを設定したりして拡張してみてください。

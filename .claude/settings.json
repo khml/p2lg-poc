@@ -1,0 +1,37 @@
+{
+  "model": "claude-sonnet-4-6",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Bash(npm test:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx cdk synth:*)",
+      "Bash(npx cdk diff:*)",
+      "Bash(make test-all)",
+      "Bash(make setup-all)",
+      "Bash(npx jest:*)",
+      "Bash(ls:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/id_rsa)",
+      "Read(**/id_rsa.*)",
+      "Read(**/id_ed25519)",
+      "Read(**/id_ed25519.*)",
+      "Read(**/.aws/credentials)",
+      "Read(**/.aws/config)",
+      "Read(**/credentials.json)",
+      "Read(**/secrets.json)"
+    ]
+  }
+}

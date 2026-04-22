@@ -1,0 +1,5 @@
+/.idea/
+/tickets/.latest_ticket_number
+/reports/
+.request.txt
+.response.txt

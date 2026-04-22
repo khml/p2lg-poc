@@ -1,0 +1,48 @@
+#!/bin/bash
+# usercomu - CLI wrapper
+#
+# Place this script alongside usercomu.app in your working directory.
+# Files (.request.txt, .response.txt, .usercomu.toml) are resolved
+# relative to this script's directory.
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_PATH="${HOME}/bin/usercomu.app"
+BINARY="${APP_PATH}/Contents/MacOS/usercomu"
+
+if [ ! -x "$BINARY" ]; then
+    echo "Error: ${APP_PATH} not found" >&2
+    exit 1
+fi
+
+CMD="${1:-}"
+
+# GUI commands (request, input) need to be launched via 'open' so that
+# macOS properly activates the app with its menu bar, enabling keyboard
+# shortcuts like Cmd+C/V/X/A.
+if [ "$CMD" = "request" ] || [ "$CMD" = "input" ]; then
+    RESP_FILE="${SCRIPT_DIR}/.response.txt"
+
+    # Record response file timestamp before launch
+    BEFORE_MTIME=""
+    if [ -f "$RESP_FILE" ]; then
+        BEFORE_MTIME=$(stat -f "%m" "$RESP_FILE" 2>/dev/null)
+    fi
+
+    # Launch as a proper macOS app bundle (-W waits, -n opens new instance)
+    open -W -n "$APP_PATH" --args --workdir "$SCRIPT_DIR" "$@"
+
+    # Check if the response file was updated (submit vs cancel)
+    if [ -f "$RESP_FILE" ]; then
+        AFTER_MTIME=$(stat -f "%m" "$RESP_FILE" 2>/dev/null)
+        if [ "$BEFORE_MTIME" != "$AFTER_MTIME" ]; then
+            cat "$RESP_FILE"
+        else
+            echo "No input provided (cancelled)" >&2
+        fi
+    else
+        echo "No input provided (cancelled)" >&2
+    fi
+else
+    # Non-GUI commands run directly
+    "$BINARY" --workdir "$SCRIPT_DIR" "$@"
+fi
