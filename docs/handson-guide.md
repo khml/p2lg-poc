@@ -2,6 +2,8 @@
 
 このガイドでは、起動した監視環境を使って Prometheus・Loki・Grafana の基本操作を学びます。
 
+> **初めての方へ:** 各ソフトウェアが何をするものか知りたい場合は、先に [software-guide.md](software-guide.md) を読むことをお勧めします。
+
 ---
 
 ## 事前準備
