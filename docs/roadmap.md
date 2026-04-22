@@ -1,0 +1,99 @@
+# プロジェクトロードマップ
+
+## プロジェクト概要
+
+**Prometheus + Loki + Promtail + Grafana ハンズオンプロジェクト（p2lg-poc）**
+
+メトリクス・ログの収集から可視化までの全体像を学ぶためのミニマル構成のPoC。
+サンプルWebアプリ（Python/Flask）がメトリクスとログを出力し、それぞれ Prometheus / Loki が収集し、Grafana で可視化する。
+
+---
+
+## 現在のフェーズ
+
+**フェーズ1: 初期セットアップ（進行中）**
+
+- プロジェクト構成の定義（完了）
+- エージェント体制の構築（進行中）
+- 実装環境の準備
+
+---
+
+## 技術スタック
+
+| カテゴリ | 技術 | バージョン / 備考 |
+|---|---|---|
+| サンプルアプリ | Python / Flask | Flask 3.1.0 |
+| メトリクス収集 | Prometheus | prom/prometheus:latest |
+| ログ収集バックエンド | Loki | grafana/loki:latest |
+| ログ転送エージェント | Promtail | grafana/promtail:latest |
+| 可視化 | Grafana | grafana/grafana:latest |
+| コンテナ管理 | Docker / Docker Compose | - |
+| メトリクスライブラリ | prometheus-client | 0.21.1 |
+
+---
+
+## アーキテクチャ概要
+
+```
+┌──────────┐        scrape /metrics         ┌─────────────┐
+│ demo-app │  ◄──────────────────────────── │  Prometheus  │──┐
+│ (Flask)  │   メトリクス (数値)             │  :9090       │  │
+│  :5000   │                                └─────────────┘  │
+│          │                                                  │  ┌──────────┐
+│  stdout  │──┐                                               ├─►│ Grafana  │
+│  (ログ)  │  │  Promtail が読み取り         ┌─────────────┐  │  │  :3000   │
+└──────────┘  │                             │    Loki      │──┘  └──────────┘
+              └──► Promtail ───push───────► │  :3100       │
+                   :9080                    └─────────────┘
+```
+
+| コンポーネント | 役割 | ポート |
+|---|---|---|
+| demo-app | Flask製サンプルアプリ。/metrics でメトリクスを公開 | 5000 |
+| Prometheus | メトリクスをpull型で収集 | 9090 |
+| Loki | ログを受信・保存・検索 | 3100 |
+| Promtail | コンテナログをLokiへ転送 | 9080 |
+| Grafana | Prometheus/Lokiのデータを可視化 | 3000 |
+
+---
+
+## 実装ステップ
+
+### フェーズ1: 初期セットアップ（進行中）
+
+- [x] チケット #0001: 要件定義作成 — プロジェクト構成・実装コードの定義
+- [ ] プロジェクト初期セットアップ — エージェント体制・ドキュメント整備
+
+### フェーズ2: 基盤実装
+
+- [ ] `monitoring-handson/` ディレクトリ・ファイル構成の構築
+  - `app/main.py` — Flask サンプルアプリ（メトリクス・ログ出力）
+  - `app/requirements.txt` — Python依存パッケージ
+  - `app/Dockerfile` — アプリコンテナ定義
+  - `prometheus/prometheus.yml` — スクレイプ設定
+  - `loki/loki-config.yml` — Loki 設定
+  - `promtail/promtail-config.yml` — ログ収集設定
+  - `grafana/datasources.yml` — データソース自動登録
+  - `docker-compose.yml` — 全サービス定義
+
+### フェーズ3: 動作確認・学習
+
+- [ ] Docker Compose で全サービス起動確認
+- [ ] Prometheus でのメトリクス確認（PromQL クエリ）
+- [ ] Loki でのログ確認（LogQL クエリ）
+- [ ] Grafana ダッシュボード作成
+
+### フェーズ4: 拡張（任意）
+
+- [ ] アラートルールの設定
+- [ ] カスタムダッシュボードの作成
+- [ ] 追加エンドポイントの実装
+
+---
+
+## チケット一覧
+
+| チケット番号 | チケット名 | ステータス |
+|---|---|---|
+| #0001 | 要件定義作成 | 完了 |
