@@ -21,6 +21,30 @@ bash scripts/generate_test_data.sh
 
 正常リクエスト30件・エラーリクエスト5件が送信され、メトリクスとログが生成されます。
 
+### ディレクトリ構成
+
+```
+monitoring-handson/
+├── app/
+│   ├── Dockerfile
+│   ├── main.py
+│   └── requirements.txt
+├── grafana/
+│   ├── dashboards.yml
+│   ├── datasources.yml
+│   └── demo-dashboard.json
+├── loki/
+│   └── loki-config.yml
+├── prometheus/
+│   └── prometheus.yml
+├── promtail/
+│   └── promtail-config.yml
+├── scripts/
+│   ├── generate_test_data.sh
+│   └── verify_queries.sh
+└── docker-compose.yml
+```
+
 ### アクセス先
 
 > ポートはホスト環境によって異なる場合があります。`docker-compose.yml` を確認してください。
