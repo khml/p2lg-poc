@@ -1,0 +1,33 @@
+チケット番号: 0004
+タイトル: handson-guide.md の実装との不一致修正
+
+---
+
+## 概要
+docs/handson-guide.md に記載されている内容が実際の実装と食い違っている箇所を修正する。
+
+## 背景
+レビューにより、docs/handson-guide.md に以下の不一致が発見された。
+ユーザーがドキュメント通りに操作すると誤った結果になる可能性があるため修正が必要。
+
+## 対応内容
+- [高] 起動手順セクションの curl コマンドのポート番号を修正
+  - 誤: `http://localhost:5000/`
+  - 正: `http://localhost:5001/`（docker-compose.yml のホスト側ポートに合わせる）
+- [低] ディレクトリ構成ツリーに実際に存在するファイルを追記
+  - `app/Dockerfile`
+  - `grafana/dashboards.yml`
+  - `grafana/demo-dashboard.json`
+  - `scripts/generate_test_data.sh`
+  - `scripts/verify_queries.sh`
+
+## 優先度
+中
+
+## 依存関係
+- なし
+
+---
+
+## チケットステータス
+未着手
