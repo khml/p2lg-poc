@@ -1,0 +1,31 @@
+チケット番号: 0007
+タイトル: スクリーンショット撮影の自動化補助
+
+---
+
+## 概要
+
+チケット #0006 で整備したスクリーンショット撮影スクリプトを、再現性高く実行するための補助手段を整備する。
+
+## 背景
+
+`capture-screenshots.mjs` を実行するには `npm install` と `npx playwright install chromium` が必要。これらを毎回手で行う手間を省き、ハンズオン参加者や将来の CI 連携をしやすくする。
+
+## 対応内容
+
+- `monitoring-handson/Makefile` に `capture` ターゲットを追加（`npm install` → `npx playwright install chromium` → `node scripts/capture-screenshots.mjs` を一発化）
+- `docs/manual/manual.md` に「Makefile による一発実行」手順を追記
+- 任意: GitHub Actions の `.github/workflows/capture.yml` 雛形（手動トリガー）のドラフト作成
+
+## 優先度
+
+低
+
+## 依存関係
+
+- #0006 完了後
+
+---
+
+## チケットステータス
+未着手

@@ -1,0 +1,109 @@
+チケット番号: 0006
+タイトル: Playwright によるスクリーンショット自動取得スクリプトと操作マニュアル作成
+
+---
+
+## 概要
+
+`monitoring-handson/scripts/capture-screenshots.mjs` で各サービスの主要画面を自動キャプチャし、`docs/manual/manual.md` に手順説明＋画像参照を備えた操作マニュアルを作成する。
+
+## 背景
+
+既存の `handson-guide.md` はテキスト主体で、初学者は実際の画面と対応付けにくい。ハンズオン参加者が「どこをクリックするか」「どの画面が出るか」を画像で把握できる操作マニュアルがあると学習効率が上がる。スクリプト化することで Grafana/Prometheus の UI 更新時にも画像を一括再生成できる。
+
+## 対応内容
+
+### A. Node プロジェクト初期化
+
+- `monitoring-handson/package.json` を新規作成
+  - `"type": "module"` を指定
+  - `scripts.capture: "node scripts/capture-screenshots.mjs"`
+  - `devDependencies.playwright: "^1.x"`
+  - `engines.node: ">=18"`
+- `monitoring-handson/.gitignore`（または リポジトリルート `.gitignore`）に `node_modules/` を追記
+- `package-lock.json` は Git 管理する
+
+### B. Playwright スクリプト本体（`monitoring-handson/scripts/capture-screenshots.mjs`）
+
+- 環境変数で URL・出力先をオーバーライド可能（`GRAFANA_URL`, `PROMETHEUS_URL`, `APP_URL`, `OUTPUT_DIR`）
+- 実行前に各 URL のヘルスチェックを実施。失敗時は「`docker compose up -d` してから実行してください」と案内して exit
+- キャプチャ対象（最低 6 枚）:
+  1. `app-home.png` — demo-app トップページ（`localhost:5001/`）
+  2. `prometheus-query.png` — Prometheus クエリ UI + Execute でグラフ表示
+  3. `grafana-home.png` — Grafana ホーム（`localhost:3003/`）
+  4. `grafana-dashboard.png` — デモダッシュボード（uid: `demo-app-dashboard`）
+  5. `grafana-explore-loki.png` — Grafana Explore + Loki + `{service="app"}` 実行後
+  6. `grafana-explore-prometheus.png` — Grafana Explore + Prometheus + `rate(app_request_total[1m])` 実行後
+- `chromium.launch({ headless: true })`、viewport `1440x900` で固定
+- 各ページで `waitForLoadState('networkidle')` + 追加スリープでグラフ描画完了を待機
+- `fullPage: false` をデフォルト（ダッシュボードのみ `fullPage: true`）
+- 各キャプチャは `try/catch` でラップし、1 枚失敗しても他を続行
+- 進捗ログを標準出力に出す（例: `[1/6] capturing app-home.png ... done`）
+
+### C. マニュアル本文（`docs/manual/manual.md`）
+
+マニュアルのテキスト・手順説明は実装時に書く（Claude が執筆）。
+画像参照は `![説明](screenshots/xxx.png)` 形式の相対パスで固定。
+
+セクション構成:
+1. はじめに（handson-guide.md との違い）
+2. 事前準備（docker compose up、generate_test_data.sh）
+3. アクセス URL 一覧
+4. demo-app の動作確認
+5. Prometheus でメトリクスを見る
+6. Grafana ホーム画面
+7. デモダッシュボードを開く
+8. Grafana Explore で Loki ログを見る
+9. Grafana Explore で Prometheus メトリクスを見る
+10. スクリーンショットの再生成方法
+11. トラブルシューティング（`npx playwright install chromium` など）
+
+### D. ドキュメント導線追加
+
+- `README.md` のドキュメント一覧に `docs/manual/manual.md` を追加
+- `docs/handson-guide.md` の冒頭付近に「画面イメージで確認したい場合は manual.md も参照」と追加
+- `docs/roadmap.md` にフェーズ6を追加し、チケット一覧に #0006 を追記
+
+### E. ディレクトリ構成（最終形）
+
+```
+p2lg-poc/
+├── monitoring-handson/
+│   ├── package.json           （新規）
+│   ├── package-lock.json      （新規・git管理）
+│   ├── .gitignore             （新規、node_modules/ を除外）
+│   └── scripts/
+│       └── capture-screenshots.mjs  （新規）
+└── docs/
+    └── manual/
+        ├── manual.md          （新規）
+        └── screenshots/
+            ├── app-home.png
+            ├── prometheus-query.png
+            ├── grafana-home.png
+            ├── grafana-dashboard.png
+            ├── grafana-explore-loki.png
+            └── grafana-explore-prometheus.png
+```
+
+## 受け入れ条件
+
+- [ ] `monitoring-handson/package.json` が存在し、`npm install` が成功する
+- [ ] `docker compose up -d` 後に `node scripts/capture-screenshots.mjs` を実行すると `docs/manual/screenshots/` に 6 枚以上の PNG が保存される
+- [ ] スクリプトを再実行すると画像が上書き更新される
+- [ ] `docs/manual/manual.md` のすべての画像参照が `screenshots/xxx.png` の相対パスになっている
+- [ ] `README.md` のドキュメント一覧に `docs/manual/manual.md` が追加されている
+- [ ] `docs/roadmap.md` が更新されている
+
+## 優先度
+
+中
+
+## 依存関係
+
+- なし（基盤実装 #0002 が完了済み）
+
+---
+
+## チケットステータス
+未着手
